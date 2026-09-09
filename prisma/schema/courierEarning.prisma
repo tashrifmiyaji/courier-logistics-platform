@@ -1,0 +1,12 @@
+model CourierEarning {
+  id         String         @id @default(uuid())
+  courierId  String
+  courier    CourierProfile @relation(fields: [courierId], references: [id])
+  shipmentId String?
+  amount     Decimal        @db.Decimal(10, 2)
+  type       String // "delivery_fee" | "bonus" | "withdrawal"
+  createdAt  DateTime       @default(now())
+
+  @@index([courierId])
+  @@map("courier_earnings")
+}

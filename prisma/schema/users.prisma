@@ -1,0 +1,23 @@
+model User {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  password   String? // nullable for social-login-only accounts
+  phone      String?
+  role       Role     @default(CUSTOMER)
+  isVerified Boolean  @default(false)
+  googleId   String?  @unique
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  customerShipments Shipment[]      @relation("CustomerShipments")
+  courierProfile    CourierProfile?
+  refreshTokens     RefreshToken[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+
+  @@index([role])
+  @@map("users")
+}

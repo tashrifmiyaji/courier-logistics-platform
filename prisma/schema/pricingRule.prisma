@@ -1,0 +1,14 @@
+model PricingRule {
+  id         String   @id @default(uuid())
+  fromZoneId String
+  fromZone   Zone     @relation("FromZonePricing", fields: [fromZoneId], references: [id])
+  toZoneId   String
+  toZone     Zone     @relation("ToZonePricing", fields: [toZoneId], references: [id])
+  baseFare   Decimal  @db.Decimal(10, 2)
+  perKgRate  Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([fromZoneId, toZoneId])
+  @@map("pricing_rules")
+}

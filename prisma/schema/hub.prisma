@@ -1,0 +1,23 @@
+model Hub {
+  id       String  @id @default(uuid())
+  name     String
+  code     String  @unique
+  zoneId   String?
+  zone     Zone?   @relation(fields: [zoneId], references: [id])
+  address  String
+  city     String
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  courierProfiles      CourierProfile[]
+  originShipments      Shipment[]       @relation("OriginHub")
+  destinationShipments Shipment[]       @relation("DestinationHub")
+  transfersFrom        HubTransfer[]    @relation("FromHub")
+  transfersTo          HubTransfer[]    @relation("ToHub")
+
+  @@index([zoneId])
+  @@map("hubs")
+}

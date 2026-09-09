@@ -1,0 +1,53 @@
+enum Role {
+  CUSTOMER
+  COURIER
+  ADMIN
+}
+
+enum ShipmentStatus {
+  PENDING
+  PICKUP_SCHEDULED
+  PICKED_UP
+  AT_ORIGIN_HUB
+  IN_TRANSIT
+  AT_DESTINATION_HUB
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED_DELIVERY
+  RETURNED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  BKASH
+  STRIPE
+  SSLCOMMERZ
+}
+
+enum VehicleType {
+  BICYCLE
+  BIKE
+  VAN
+  TRUCK
+}
+
+enum CourierAvailability {
+  AVAILABLE
+  BUSY
+  OFFLINE
+}
+
+enum NotificationType {
+  SHIPMENT_CREATED
+  STATUS_UPDATE
+  PAYMENT_CONFIRMATION
+  ASSIGNMENT
+  GENERAL
+}

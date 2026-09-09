@@ -1,0 +1,12 @@
+model Zone {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  hubs             Hub[]
+  pricingRulesFrom PricingRule[] @relation("FromZonePricing")
+  pricingRulesTo   PricingRule[] @relation("ToZonePricing")
+
+  @@map("zones")
+}

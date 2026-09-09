@@ -1,0 +1,23 @@
+model CourierProfile {
+  id              String              @id @default(uuid())
+  userId          String              @unique
+  user            User                @relation(fields: [userId], references: [id])
+  vehicleType     VehicleType
+  licenseNumber   String?
+  availability    CourierAvailability @default(OFFLINE)
+  currentHubId    String?
+  currentHub      Hub?                @relation(fields: [currentHubId], references: [id])
+  rating          Float               @default(0)
+  totalDeliveries Int                 @default(0)
+  earningsBalance Decimal             @default(0) @db.Decimal(10, 2)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  assignedShipments Shipment[]       @relation("CourierShipments")
+  earnings          CourierEarning[]
+
+  @@index([availability])
+  @@map("courier_profiles")
+}

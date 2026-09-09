@@ -1,0 +1,16 @@
+model Payment {
+  id            String          @id @default(uuid())
+  shipmentId    String
+  shipment      Shipment        @relation(fields: [shipmentId], references: [id])
+  amount        Decimal         @db.Decimal(10, 2)
+  provider      PaymentProvider
+  status        PaymentStatus   @default(PENDING)
+  transactionId String?         @unique
+  paidAt        DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([shipmentId])
+  @@index([status])
+  @@map("payments")
+}

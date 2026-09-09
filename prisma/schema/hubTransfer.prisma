@@ -1,0 +1,15 @@
+model HubTransfer {
+  id           String    @id @default(uuid())
+  shipmentId   String
+  shipment     Shipment  @relation(fields: [shipmentId], references: [id])
+  fromHubId    String
+  fromHub      Hub       @relation("FromHub", fields: [fromHubId], references: [id])
+  toHubId      String
+  toHub        Hub       @relation("ToHub", fields: [toHubId], references: [id])
+  dispatchedAt DateTime?
+  arrivedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([shipmentId])
+  @@map("hub_transfers")
+}

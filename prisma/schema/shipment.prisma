@@ -1,0 +1,44 @@
+model Shipment {
+  id           String @id @default(uuid())
+  trackingCode String @unique
+
+  customerId String
+  customer   User    @relation("CustomerShipments", fields: [customerId], references: [id])
+  courierId  String?
+  courier    CourierProfile? @relation("CourierShipments", fields: [courierId], references: [id])
+
+  senderName    String
+  senderPhone   String
+  pickupAddress String
+  pickupHubId   String?
+  pickupHub     Hub?    @relation("OriginHub", fields: [pickupHubId], references: [id])
+
+  receiverName    String
+  receiverPhone   String
+  deliveryAddress String
+  deliveryHubId   String?
+  deliveryHub     Hub?    @relation("DestinationHub", fields: [deliveryHubId], references: [id])
+
+  weightKg       Decimal @db.Decimal(6, 2)
+  parcelType     String?
+  codAmount      Decimal? @db.Decimal(10, 2) // cash-on-delivery amount for the parcel itself
+  deliveryCharge Decimal  @db.Decimal(10, 2)
+
+  status            ShipmentStatus @default(PENDING)
+  scheduledPickupAt DateTime?
+  deliveredAt       DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  trackingEvents TrackingEvent[]
+  payments       Payment[]
+  hubTransfers   HubTransfer[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([courierId])
+  @@index([createdAt])
+  @@map("shipments")
+}
