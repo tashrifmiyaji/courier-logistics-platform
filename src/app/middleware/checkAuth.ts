@@ -64,6 +64,7 @@ export const auth = (...requiredRoles: Role[]) => {
 				email,
 				name,
 				role,
+				deletedAt: null,
 			},
 		});
 
@@ -75,10 +76,7 @@ export const auth = (...requiredRoles: Role[]) => {
 		}
 
 		if (!user.isVerified) {
-			throw new AppError(
-				httpStatus.FORBIDDEN,
-				"Your are not verified!",
-			);
+			throw new AppError(httpStatus.FORBIDDEN, "Your are not verified!");
 		}
 
 		req.user = {
