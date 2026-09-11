@@ -1,3 +1,454 @@
 {
-    
+  "info": {
+    "name": "Courier Logistics Platform API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection aligned with the current Express API routes and validation rules. Set baseUrl and token before executing requests."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api/v1" },
+    { "key": "accessToken", "value": "" },
+    { "key": "shipmentId", "value": "" },
+    { "key": "courierId", "value": "" },
+    { "key": "hubId", "value": "" },
+    { "key": "zoneId", "value": "" },
+    { "key": "trackingCode", "value": "CLP-TEST-123" },
+    { "key": "paymentId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Customer Name\",\n  \"email\": \"customer@example.com\",\n  \"password\": \"Customer@1234\",\n  \"phone\": \"01700000000\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"Customer@1234\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Google login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"google-id-token\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/google"
+          }
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"your-refresh-token\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/refresh-token"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"your-refresh-token\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get my profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/users/me"
+          }
+        },
+        {
+          "name": "Update my profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Customer\",\n  \"phone\": \"01711112222\"\n}"
+            },
+            "url": "{{baseUrl}}/users/me"
+          }
+        },
+        {
+          "name": "Get notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/users/notifications"
+          }
+        },
+        {
+          "name": "Mark notification as read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/users/notifications/{{notificationId}}/read"
+          }
+        },
+        {
+          "name": "Update courier availability",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"availability\": \"AVAILABLE\"\n}"
+            },
+            "url": "{{baseUrl}}/users/courier/availability"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shipments",
+      "item": [
+        {
+          "name": "Create shipment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderName\": \"Customer Name\",\n  \"senderPhone\": \"01700000000\",\n  \"pickupAddress\": \"Gulshan, Dhaka\",\n  \"pickupHubId\": \"{{hubId}}\",\n  \"receiverName\": \"Receiver Name\",\n  \"receiverPhone\": \"01800000000\",\n  \"deliveryAddress\": \"Agrabad, Chattogram\",\n  \"deliveryHubId\": \"{{hubId}}\",\n  \"weightKg\": 1.5\n}"
+            },
+            "url": "{{baseUrl}}/shipments"
+          }
+        },
+        {
+          "name": "List shipments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/shipments?page=1&limit=10&status=PENDING&search=CLP"
+          }
+        },
+        {
+          "name": "Get shipment by id",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/shipments/{{shipmentId}}"
+          }
+        },
+        {
+          "name": "Track shipment by code",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/shipments/track/{{trackingCode}}"
+          }
+        },
+        {
+          "name": "Cancel shipment",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/shipments/{{shipmentId}}/cancel"
+          }
+        },
+        {
+          "name": "Assign courier",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courierId\": \"{{courierId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/shipments/{{shipmentId}}/assign"
+          }
+        },
+        {
+          "name": "Update shipment status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PICKED_UP\",\n  \"note\": \"Collected from sender\",\n  \"location\": \"Dhaka\"\n}"
+            },
+            "url": "{{baseUrl}}/shipments/{{shipmentId}}/status"
+          }
+        },
+        {
+          "name": "Dispatch hub transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromHubId\": \"{{hubId}}\",\n  \"toHubId\": \"{{destinationHubId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/shipments/{{shipmentId}}/transfers"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Operations",
+      "item": [
+        {
+          "name": "List zones",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/operations/zones"
+          }
+        },
+        {
+          "name": "Create zone",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dhaka\"\n}"
+            },
+            "url": "{{baseUrl}}/operations/zones"
+          }
+        },
+        {
+          "name": "List hubs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/operations/hubs?zoneId={{zoneId}}&active=true"
+          }
+        },
+        {
+          "name": "Create hub",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mirpur Hub\",\n  \"code\": \"DHK-MIR\",\n  \"zoneId\": \"{{zoneId}}\",\n  \"address\": \"Mirpur, Dhaka\",\n  \"city\": \"Dhaka\",\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/operations/hubs"
+          }
+        },
+        {
+          "name": "Update hub",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Mirpur Hub\",\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/operations/hubs/{{hubId}}"
+          }
+        },
+        {
+          "name": "Delete hub",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/operations/hubs/{{hubId}}"
+          }
+        },
+        {
+          "name": "Calculate delivery price",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromHubId\": \"{{originHubId}}\",\n  \"toHubId\": \"{{destinationHubId}}\",\n  \"weightKg\": 1.5\n}"
+            },
+            "url": "{{baseUrl}}/operations/pricing/calculate"
+          }
+        },
+        {
+          "name": "Save pricing rule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromZoneId\": \"{{originZoneId}}\",\n  \"toZoneId\": \"{{destinationZoneId}}\",\n  \"baseFare\": 120,\n  \"perKgRate\": 35\n}"
+            },
+            "url": "{{baseUrl}}/operations/pricing"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Initiate bKash payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": \"{{shipmentId}}\",\n  \"provider\": \"BKASH\"\n}"
+            },
+            "url": "{{baseUrl}}/payments/initiate"
+          }
+        },
+        {
+          "name": "bKash callback",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/payments/bkash/callback?paymentId={{paymentId}}&paymentID=sample-bkash-payment-id&status=success",
+              "protocol": "http",
+              "host": ["localhost:5000"],
+              "path": ["api", "v1", "payments", "bkash", "callback"],
+              "query": [
+                { "key": "paymentId", "value": "{{paymentId}}" },
+                { "key": "paymentID", "value": "sample-bkash-payment-id" },
+                { "key": "status", "value": "success" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get payment by id",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/payments/{{paymentId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Dashboard statistics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/admin/dashboard"
+          }
+        },
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/admin/users?page=1&limit=10&role=COURIER"
+          }
+        },
+        {
+          "name": "Create courier",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Courier\",\n  \"email\": \"courier@example.com\",\n  \"password\": \"Courier@1234\",\n  \"phone\": \"01711112222\",\n  \"vehicleType\": \"BIKE\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/couriers"
+          }
+        },
+        {
+          "name": "Update user role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"COURIER\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/users/{{userId}}/role"
+          }
+        },
+        {
+          "name": "Delete user",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/admin/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Audit logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/admin/audit-logs?page=1&limit=10"
+          }
+        }
+      ]
+    }
+  ]
 }
