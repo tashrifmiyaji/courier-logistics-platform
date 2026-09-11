@@ -36,7 +36,7 @@ export async function seedingScript() {
 			const password = config.admin_password;
 
 			if (!name || !email || !password) {
-        throw new AppError(
+				throw new AppError(
 					httpStatus.INTERNAL_SERVER_ERROR,
 					"Admin Name, Email, Password Missing In Env File!!!",
 				);
@@ -392,224 +392,224 @@ export async function seedingScript() {
 	// ---------------------------------------------------------
 	// 6. Shipments
 	// ---------------------------------------------------------
-const seedShipments = async ({
-	customers,
-	courierProfiles,
-	dhakaHub,
-	chattogramHub,
-	sylhetHub,
-}: {
-	customers: Array<{
-		id: string;
-		name: string;
-	}>;
-	courierProfiles: Array<{
-		id: string;
-	}>;
-	dhakaHub: {
-		id: string;
-		name: string;
-	};
-	chattogramHub: {
-		id: string;
-		name: string;
-	};
-	sylhetHub: {
-		id: string;
-		name: string;
-	};
-}) => {
-	try {
-		// ---------------------------------------------------------
-		// Check existing shipments
-		// ---------------------------------------------------------
-		const existingShipments = await prisma.shipment.findMany({
-			where: {
-				trackingCode: {
-					in: ["TRK-0001", "TRK-0002"],
+	const seedShipments = async ({
+		customers,
+		courierProfiles,
+		dhakaHub,
+		chattogramHub,
+		sylhetHub,
+	}: {
+		customers: Array<{
+			id: string;
+			name: string;
+		}>;
+		courierProfiles: Array<{
+			id: string;
+		}>;
+		dhakaHub: {
+			id: string;
+			name: string;
+		};
+		chattogramHub: {
+			id: string;
+			name: string;
+		};
+		sylhetHub: {
+			id: string;
+			name: string;
+		};
+	}) => {
+		try {
+			// ---------------------------------------------------------
+			// Check existing shipments
+			// ---------------------------------------------------------
+			const existingShipments = await prisma.shipment.findMany({
+				where: {
+					trackingCode: {
+						in: ["TRK-0001", "TRK-0002"],
+					},
 				},
-			},
-		});
+			});
 
-		// ---------------------------------------------------------
-		// If shipments already exist
-		// ---------------------------------------------------------
-		if (existingShipments.length === 2) {
-			console.log("Shipments Already Exist!");
+			// ---------------------------------------------------------
+			// If shipments already exist
+			// ---------------------------------------------------------
+			if (existingShipments.length === 2) {
+				console.log("Shipments Already Exist!");
 
-			const shipment1 = existingShipments.find(
+				const shipment1 = existingShipments.find(
+					(shipment) => shipment.trackingCode === "TRK-0001",
+				);
+
+				const shipment2 = existingShipments.find(
+					(shipment) => shipment.trackingCode === "TRK-0002",
+				);
+
+				if (!shipment1 || !shipment2) {
+					throw new AppError(
+						httpStatus.INTERNAL_SERVER_ERROR,
+						"Required demo shipments were not found!",
+					);
+				}
+
+				return {
+					shipment1,
+					shipment2,
+				};
+			}
+
+			// ---------------------------------------------------------
+			// Shipment #1 — In Transit, Paid
+			// ---------------------------------------------------------
+			let shipment1 = existingShipments.find(
 				(shipment) => shipment.trackingCode === "TRK-0001",
 			);
 
-			const shipment2 = existingShipments.find(
+			if (!shipment1) {
+				shipment1 = await prisma.shipment.create({
+					data: {
+						trackingCode: "TRK-0001",
+
+						customerId: customers[0].id,
+						courierId: courierProfiles[0].id,
+
+						senderName: customers[0].name,
+						senderPhone: "01711000000",
+						pickupAddress: "Gulshan, Dhaka",
+						pickupHubId: dhakaHub.id,
+
+						receiverName: "Farhana Akter",
+						receiverPhone: "01911000000",
+						deliveryAddress: "Agrabad, Chattogram",
+						deliveryHubId: chattogramHub.id,
+
+						weightKg: 2.5,
+						parcelType: "Documents",
+
+						deliveryCharge: 80 + 2.5 * 15,
+
+						status: ShipmentStatus.IN_TRANSIT,
+					},
+				});
+
+				await prisma.trackingEvent.createMany({
+					data: [
+						{
+							shipmentId: shipment1.id,
+							status: ShipmentStatus.PENDING,
+							note: "Shipment created",
+						},
+						{
+							shipmentId: shipment1.id,
+							status: ShipmentStatus.PICKUP_SCHEDULED,
+							note: "Pickup scheduled",
+						},
+						{
+							shipmentId: shipment1.id,
+							status: ShipmentStatus.PICKED_UP,
+							note: "Picked up by courier",
+							location: "Gulshan, Dhaka",
+						},
+						{
+							shipmentId: shipment1.id,
+							status: ShipmentStatus.AT_ORIGIN_HUB,
+							note: "Arrived at origin hub",
+							location: dhakaHub.name,
+						},
+						{
+							shipmentId: shipment1.id,
+							status: ShipmentStatus.IN_TRANSIT,
+							note: "In transit to destination hub",
+						},
+					],
+				});
+
+				await prisma.hubTransfer.create({
+					data: {
+						shipmentId: shipment1.id,
+						fromHubId: dhakaHub.id,
+						toHubId: chattogramHub.id,
+						dispatchedAt: new Date(),
+					},
+				});
+
+				await prisma.payment.create({
+					data: {
+						shipmentId: shipment1.id,
+						amount: shipment1.deliveryCharge,
+						provider: PaymentProvider.SSLCOMMERZ,
+						status: PaymentStatus.PAID,
+						transactionId: "TXN-DEMO-0001",
+						paidAt: new Date(),
+					},
+				});
+
+				console.log("Shipment #1 Created!");
+			} else {
+				console.log("Shipment #1 Already Exists!");
+			}
+
+			// ---------------------------------------------------------
+			// Shipment #2 — Pending, Unassigned
+			// ---------------------------------------------------------
+			let shipment2 = existingShipments.find(
 				(shipment) => shipment.trackingCode === "TRK-0002",
 			);
 
-			if (!shipment1 || !shipment2) {
-				throw new AppError(
-					httpStatus.INTERNAL_SERVER_ERROR,
-					"Required demo shipments were not found!",
-				);
+			if (!shipment2) {
+				shipment2 = await prisma.shipment.create({
+					data: {
+						trackingCode: "TRK-0002",
+
+						customerId: customers[1].id,
+
+						senderName: customers[1].name,
+						senderPhone: "01911223344",
+						pickupAddress: "Banani, Dhaka",
+						pickupHubId: dhakaHub.id,
+
+						receiverName: "Rezaul Karim",
+						receiverPhone: "01711223344",
+						deliveryAddress: "Zindabazar, Sylhet",
+						deliveryHubId: sylhetHub.id,
+
+						weightKg: 1.2,
+						parcelType: "Electronics",
+
+						deliveryCharge: 90 + 1.2 * 18,
+
+						status: ShipmentStatus.PENDING,
+					},
+				});
+
+				await prisma.trackingEvent.create({
+					data: {
+						shipmentId: shipment2.id,
+						status: ShipmentStatus.PENDING,
+						note: "Shipment created, awaiting pickup",
+					},
+				});
+
+				console.log("Shipment #2 Created!");
+			} else {
+				console.log("Shipment #2 Already Exists!");
 			}
+
+			// ---------------------------------------------------------
+			// Return both shipments
+			// ---------------------------------------------------------
+			console.log("Shipments Seeded Successfully!");
 
 			return {
 				shipment1,
 				shipment2,
 			};
+		} catch (error) {
+			console.log("Error Seeding Shipments:", error);
+
+			throw error;
 		}
-
-		// ---------------------------------------------------------
-		// Shipment #1 — In Transit, Paid
-		// ---------------------------------------------------------
-		let shipment1 = existingShipments.find(
-			(shipment) => shipment.trackingCode === "TRK-0001",
-		);
-
-		if (!shipment1) {
-			shipment1 = await prisma.shipment.create({
-				data: {
-					trackingCode: "TRK-0001",
-
-					customerId: customers[0].id,
-					courierId: courierProfiles[0].id,
-
-					senderName: customers[0].name,
-					senderPhone: "01711000000",
-					pickupAddress: "Gulshan, Dhaka",
-					pickupHubId: dhakaHub.id,
-
-					receiverName: "Farhana Akter",
-					receiverPhone: "01911000000",
-					deliveryAddress: "Agrabad, Chattogram",
-					deliveryHubId: chattogramHub.id,
-
-					weightKg: 2.5,
-					parcelType: "Documents",
-
-					deliveryCharge: 80 + 2.5 * 15,
-
-					status: ShipmentStatus.IN_TRANSIT,
-				},
-			});
-
-			await prisma.trackingEvent.createMany({
-				data: [
-					{
-						shipmentId: shipment1.id,
-						status: ShipmentStatus.PENDING,
-						note: "Shipment created",
-					},
-					{
-						shipmentId: shipment1.id,
-						status: ShipmentStatus.PICKUP_SCHEDULED,
-						note: "Pickup scheduled",
-					},
-					{
-						shipmentId: shipment1.id,
-						status: ShipmentStatus.PICKED_UP,
-						note: "Picked up by courier",
-						location: "Gulshan, Dhaka",
-					},
-					{
-						shipmentId: shipment1.id,
-						status: ShipmentStatus.AT_ORIGIN_HUB,
-						note: "Arrived at origin hub",
-						location: dhakaHub.name,
-					},
-					{
-						shipmentId: shipment1.id,
-						status: ShipmentStatus.IN_TRANSIT,
-						note: "In transit to destination hub",
-					},
-				],
-			});
-
-			await prisma.hubTransfer.create({
-				data: {
-					shipmentId: shipment1.id,
-					fromHubId: dhakaHub.id,
-					toHubId: chattogramHub.id,
-					dispatchedAt: new Date(),
-				},
-			});
-
-			await prisma.payment.create({
-				data: {
-					shipmentId: shipment1.id,
-					amount: shipment1.deliveryCharge,
-					provider: PaymentProvider.SSLCOMMERZ,
-					status: PaymentStatus.PAID,
-					transactionId: "TXN-DEMO-0001",
-					paidAt: new Date(),
-				},
-			});
-
-			console.log("Shipment #1 Created!");
-		} else {
-			console.log("Shipment #1 Already Exists!");
-		}
-
-		// ---------------------------------------------------------
-		// Shipment #2 — Pending, Unassigned
-		// ---------------------------------------------------------
-		let shipment2 = existingShipments.find(
-			(shipment) => shipment.trackingCode === "TRK-0002",
-		);
-
-		if (!shipment2) {
-			shipment2 = await prisma.shipment.create({
-				data: {
-					trackingCode: "TRK-0002",
-
-					customerId: customers[1].id,
-
-					senderName: customers[1].name,
-					senderPhone: "01911223344",
-					pickupAddress: "Banani, Dhaka",
-					pickupHubId: dhakaHub.id,
-
-					receiverName: "Rezaul Karim",
-					receiverPhone: "01711223344",
-					deliveryAddress: "Zindabazar, Sylhet",
-					deliveryHubId: sylhetHub.id,
-
-					weightKg: 1.2,
-					parcelType: "Electronics",
-
-					deliveryCharge: 90 + 1.2 * 18,
-
-					status: ShipmentStatus.PENDING,
-				},
-			});
-
-			await prisma.trackingEvent.create({
-				data: {
-					shipmentId: shipment2.id,
-					status: ShipmentStatus.PENDING,
-					note: "Shipment created, awaiting pickup",
-				},
-			});
-
-			console.log("Shipment #2 Created!");
-		} else {
-			console.log("Shipment #2 Already Exists!");
-		}
-
-		// ---------------------------------------------------------
-		// Return both shipments
-		// ---------------------------------------------------------
-		console.log("Shipments Seeded Successfully!");
-
-		return {
-			shipment1,
-			shipment2,
-		};
-	} catch (error) {
-		console.log("Error Seeding Shipments:", error);
-
-		throw error;
-	}
-};
+	};
 	// ---------------------------------------------------------
 	// 7. Notifications + Audit Log
 	// ---------------------------------------------------------
