@@ -62,7 +62,7 @@ export const getBkashIdToken = async () => {
 		}
 
 		const response = await fetch(
-			`${config.bkash_base_url}//tokenized/checkout/token/grant`,
+			`${config.bkash_base_url}/tokenized/checkout/token/grant`,
 			{
 				method: "POST",
 				headers: {
