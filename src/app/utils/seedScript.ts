@@ -741,6 +741,6 @@ export async function seedingScript() {
 	console.log("---------------------------------------------");
 	console.log("Demo Admin Login (for evaluation):");
 	console.log("  email   :", admin.email);
-	console.log("  password: Admin@1234");
+	console.log("  password: ", config.admin_password);
 	console.log("---------------------------------------------");
 }
