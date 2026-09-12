@@ -9,3 +9,19 @@ export const redisClient = createClient({
 		port: Number(config.redis_port),
 	},
 });
+
+let redisConnection: Promise<void> | undefined;
+
+export const ensureRedisConnection = async () => {
+	if (redisClient.isReady) return;
+
+	redisConnection ??= redisClient
+		.connect()
+		.then(() => undefined)
+		.catch((error) => {
+			redisConnection = undefined;
+			throw error;
+		});
+
+	await redisConnection;
+};

@@ -1,10 +1,12 @@
 import httpStatus from "http-status";
 import config from "../config";
 import { AppError } from "../utils/AppError";
-import { redisClient } from "./redis";
+import { ensureRedisConnection, redisClient } from "./redis";
 
 export const getBkashIdToken = async () => {
 	try {
+		await ensureRedisConnection();
+
 		const IdTokenKey = "bkash:idToken";
 		const RefreshTokenKey = "bkash:refreshToken";
 
