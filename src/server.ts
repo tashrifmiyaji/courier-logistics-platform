@@ -15,8 +15,12 @@ const main = async () => {
 		await redisClient.connect();
 		console.log("Redis Connected Successfully.");
 
-		await transporter.verify();
-		console.log("Nodemailer Connected Successfully.");
+		try {
+			await transporter.verify();
+			console.log("Nodemailer Connected Successfully.");
+		} catch (error) {
+			console.error("Nodemailer connection failed:", error);
+		}
 
 		await seedingScript();
 
