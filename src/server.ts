@@ -5,7 +5,7 @@ import { prisma } from "./app/lib/prisma";
 import { redisClient } from "./app/lib/redis";
 import { seedingScript } from "./app/utils/seedScript";
 
-const PORT = config.port;
+const PORT = config.port || 500;
 
 const main = async () => {
 	try {
