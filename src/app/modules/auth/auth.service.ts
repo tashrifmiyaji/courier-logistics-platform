@@ -154,15 +154,22 @@ export const authService = {
 				data: { revoked: true },
 			});
 	},
-	setRefreshCookie(res: Response, refreshToken: string) {
+	setRefreshCookie(res: Response, accessToken: string, refreshToken: string) {
+		res.cookie("accessToken", accessToken, {
+			httpOnly: true,
+			secure: config.node_env === "production",
+			sameSite: "lax",
+			maxAge: 2 * 24 * 60 * 60 * 1000,
+		});
 		res.cookie("refreshToken", refreshToken, {
 			httpOnly: true,
 			secure: config.node_env === "production",
 			sameSite: "lax",
-			path: "/api/v1/auth",
+			maxAge: 30 * 24 * 60 * 60 * 1000,
 		});
 	},
 	clearRefreshCookie(res: Response) {
-		res.clearCookie("refreshToken", { path: "/api/v1/auth" });
+		res.clearCookie("accessToken");
+		res.clearCookie("refreshToken");
 	},
 };

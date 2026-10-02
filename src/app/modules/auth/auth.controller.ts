@@ -15,7 +15,7 @@ export const authController = {
 	}),
 	login: catchAsync(async (req, res) => {
 		const data = await authService.login(req.body.email, req.body.password);
-		authService.setRefreshCookie(res, data.refreshToken);
+		authService.setRefreshCookie(res, data.accessToken, data.refreshToken);
 		sendResponse(res, {
 			success: true,
 			statusCode: httpStatus.OK,
@@ -25,7 +25,7 @@ export const authController = {
 	}),
 	google: catchAsync(async (req, res) => {
 		const data = await authService.google(req.body.idToken);
-		authService.setRefreshCookie(res, data.refreshToken);
+		authService.setRefreshCookie(res, data.accessToken, data.refreshToken);
 		sendResponse(res, {
 			success: true,
 			statusCode: httpStatus.OK,
@@ -37,7 +37,7 @@ export const authController = {
 		const token = req.cookies.refreshToken || req.body.refreshToken;
 		if (!token) throw new Error("Refresh token is required");
 		const data = await authService.refresh(token);
-		authService.setRefreshCookie(res, data.refreshToken);
+		authService.setRefreshCookie(res, data.accessToken, data.refreshToken);
 		sendResponse(res, {
 			success: true,
 			statusCode: httpStatus.OK,
