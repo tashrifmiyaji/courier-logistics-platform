@@ -37,13 +37,23 @@ export const paymentsService = {
 			},
 		});
 		const idToken = await getBkashIdToken();
+		if (!idToken) {
+			await prisma.payment.update({
+				where: { id: payment.id },
+				data: { status: "FAILED" },
+			});
+			throw new AppError(
+				httpStatus.INTERNAL_SERVER_ERROR,
+				"No bKash access token is available",
+			);
+		}
 		const response = await fetch(bkashUrl("/tokenized/checkout/create"), {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 				Accept: "application/json",
 				authorization: idToken || "",
-				"X-App-Key": config.bkash_app_key,
+				"x-app-key": config.bkash_app_key,
 			},
 			body: JSON.stringify({
 				mode: "0011",

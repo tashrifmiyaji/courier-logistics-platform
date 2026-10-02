@@ -175,6 +175,7 @@ export const shipmentsService = {
 				include: {
 					pickupHub: true,
 					deliveryHub: true,
+					payments: true,
 					courier: {
 						include: { user: { select: { name: true, phone: true } } },
 					},

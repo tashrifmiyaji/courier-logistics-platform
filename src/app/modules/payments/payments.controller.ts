@@ -4,6 +4,7 @@ import { getParam } from "../../utils/api";
 import { catchAsync } from "../../utils/catchAsync";
 import { AppError } from "../../utils/AppError";
 import { sendResponse } from "../../utils/sendResponse";
+import config from "../../config";
 import { paymentsService } from "./payments.service";
 
 export const paymentsController = {
@@ -47,12 +48,13 @@ export const paymentsController = {
 			parsed.data.bkashPaymentId,
 			parsed.data.status,
 		);
-		sendResponse(res, {
-			success: true,
-			statusCode: httpStatus.OK,
-			message: "bKash payment verified successfully",
-			data,
-		});
+		const resultUrl = new URL("/payment/result", config.frontend_url);
+		resultUrl.searchParams.set(
+			"status",
+			data.status === "PAID" ? "success" : "cancelled",
+		);
+		resultUrl.searchParams.set("paymentId", data.id);
+		res.redirect(httpStatus.SEE_OTHER, resultUrl.toString());
 	}),
 	getById: catchAsync(async (req, res) => {
 		const data = await paymentsService.getById(
