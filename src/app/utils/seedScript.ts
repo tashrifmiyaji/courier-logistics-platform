@@ -738,9 +738,12 @@ export async function seedingScript() {
 	});
 
 	console.log("✅ Seeding completed!");
-	console.log("---------------------------------------------");
-	console.log("Demo Admin Login (for evaluation):");
-	console.log("  email   :", admin.email);
-	console.log("  password: ", config.admin_password);
-	console.log("---------------------------------------------");
+	if (config.node_env === "development") {
+		console.log("---------------------------------------------");
+		console.log("Demo Admin Login (for evaluation):");
+		console.log("  email   :", admin.email);
+		console.log("  password: ", config.admin_password);
+		console.log("---------------------------------------------");
+	}
+
 }
