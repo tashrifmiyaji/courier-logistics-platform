@@ -6,6 +6,7 @@ model Payment {
   provider      PaymentProvider
   status        PaymentStatus   @default(PENDING)
   transactionId String?         @unique
+  checkoutUrl   String?         @db.Text
   paidAt        DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt

@@ -26,7 +26,16 @@ const includeDetails = {
 	pickupHub: true,
 	deliveryHub: true,
 	trackingEvents: { orderBy: { createdAt: "asc" as const } },
-	payments: true,
+	payments: {
+		select: {
+			id: true,
+			amount: true,
+			provider: true,
+			status: true,
+			paidAt: true,
+			createdAt: true,
+		},
+	},
 } as const;
 
 const trackingCode = () =>

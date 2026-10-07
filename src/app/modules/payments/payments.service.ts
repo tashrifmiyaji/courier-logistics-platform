@@ -12,6 +12,87 @@ import { AppError } from "../../utils/AppError";
 const bkashUrl = (path: string) =>
 	`${config.bkash_base_url.replace(/\/$/, "")}${path}`;
 
+async function reconcilePendingPayment(payment: {
+	id: string;
+	transactionId: string | null;
+	amount: { toString(): string };
+	shipment: { customerId: string; trackingCode: string };
+}) {
+	if (!payment.transactionId)
+		throw new AppError(
+			httpStatus.CONFLICT,
+			"An earlier bKash attempt is unresolved. Contact support to verify its status before creating another payment.",
+		);
+
+	const idToken = await getBkashIdToken();
+	if (!idToken)
+		throw new AppError(
+			httpStatus.SERVICE_UNAVAILABLE,
+			"No bKash access token is available",
+		);
+	const response = await fetch(bkashUrl("/tokenized/checkout/payment/status"), {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Accept: "application/json",
+			authorization: idToken,
+			"x-app-key": config.bkash_app_key,
+		},
+		body: JSON.stringify({ paymentID: payment.transactionId }),
+	});
+	const result = (await response.json()) as {
+		statusCode?: string;
+		statusMessage?: string;
+		transactionStatus?: string;
+		trxID?: string;
+		amount?: string;
+	};
+	if (!response.ok || result.statusCode !== "0000")
+		throw new AppError(
+			httpStatus.BAD_GATEWAY,
+			result.statusMessage || "Could not verify the previous bKash session",
+		);
+
+	const transactionStatus = result.transactionStatus?.toLowerCase();
+	if (transactionStatus === "completed") {
+		if (Number(result.amount) !== Number(payment.amount))
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"bKash amount does not match payment amount",
+			);
+		await prisma.$transaction(async (tx) => {
+			const updated = await tx.payment.updateMany({
+				where: { id: payment.id, status: "PENDING" },
+				data: {
+					status: "PAID",
+					transactionId: result.trxID || payment.transactionId,
+					paidAt: new Date(),
+				},
+			});
+			if (updated.count)
+				await tx.notification.create({
+					data: {
+						userId: payment.shipment.customerId,
+						type: NotificationType.PAYMENT_CONFIRMATION,
+						title: "Payment confirmed",
+						message: `Payment for ${payment.shipment.trackingCode} has been confirmed.`,
+					},
+				});
+		});
+		return "PAID";
+	}
+
+	if (["cancelled", "declined", "failed"].includes(transactionStatus || "")) {
+		await prisma.payment.updateMany({
+			where: { id: payment.id, status: "PENDING" },
+			data: { status: "FAILED" },
+		});
+		return "FAILED";
+	}
+
+	return "PENDING";
+}
+
 export const paymentsService = {
 	async initiate(shipmentId: string, userId: string, payerReference?: string) {
 		const shipment = await prisma.shipment.findFirst({
@@ -24,11 +105,26 @@ export const paymentsService = {
 		});
 		if (existing?.status === "PAID")
 			throw new AppError(httpStatus.CONFLICT, "This shipment is already paid");
-		if (existing?.status === "PENDING")
-			throw new AppError(
-				httpStatus.CONFLICT,
-				"A payment session is already pending",
-			);
+		if (existing?.status === "PENDING" && existing.checkoutUrl)
+			return { paymentId: existing.id, paymentURL: existing.checkoutUrl };
+		if (existing?.status === "PENDING") {
+			const status = await reconcilePendingPayment({
+				id: existing.id,
+				transactionId: existing.transactionId,
+				amount: existing.amount,
+				shipment,
+			});
+			if (status === "PAID")
+				throw new AppError(
+					httpStatus.CONFLICT,
+					"This shipment has already been paid",
+				);
+			if (status === "PENDING")
+				throw new AppError(
+					httpStatus.CONFLICT,
+					"The previous bKash session is still active. Wait for bKash to finish processing before retrying; another payment cannot be started safely yet.",
+				);
+		}
 		const payment = await prisma.payment.create({
 			data: {
 				shipmentId,
@@ -88,7 +184,10 @@ export const paymentsService = {
 		}
 		await prisma.payment.update({
 			where: { id: payment.id },
-			data: { transactionId: result.paymentID },
+			data: {
+				transactionId: result.paymentID,
+				checkoutUrl: result.bkashURL,
+			},
 		});
 		return { paymentId: payment.id, paymentURL: result.bkashURL };
 	},
@@ -104,16 +203,16 @@ export const paymentsService = {
 		if (payment?.provider !== PaymentProvider.BKASH)
 			throw new AppError(httpStatus.NOT_FOUND, "Payment not found");
 		if (payment.status === "PAID") return payment;
-		if (status?.toLowerCase() === "cancel")
-			return prisma.payment.update({
-				where: { id: paymentId },
-				data: { status: "FAILED" },
-			});
 		if (payment.transactionId && payment.transactionId !== bkashPaymentId)
 			throw new AppError(
 				httpStatus.BAD_REQUEST,
 				"Payment transaction does not match",
 			);
+		if (status && status.toLowerCase() !== "success")
+			return prisma.payment.update({
+				where: { id: paymentId },
+				data: { status: "FAILED" },
+			});
 		const idToken = await getBkashIdToken();
 		const response = await fetch(bkashUrl("/tokenized/checkout/execute"), {
 			method: "POST",
@@ -130,12 +229,21 @@ export const paymentsService = {
 			statusMessage?: string;
 			trxID?: string;
 			amount?: string;
+			transactionStatus?: string;
 		};
 		if (!response.ok || result.statusCode !== "0000")
 			throw new AppError(
 				httpStatus.BAD_GATEWAY,
 				result.statusMessage || "bKash payment verification failed",
 			);
+		if (
+			result.transactionStatus &&
+			result.transactionStatus.toLowerCase() !== "completed"
+		)
+			return prisma.payment.update({
+				where: { id: paymentId },
+				data: { status: "FAILED" },
+			});
 		if (Number(result.amount) !== Number(payment.amount))
 			throw new AppError(
 				httpStatus.BAD_REQUEST,
